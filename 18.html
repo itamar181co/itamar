@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מנהל חומרי הלימוד שלי</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+        .admin-panel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 40px; border-top: 5px solid #1a73e8; }
+        .input-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input[type="text"], input[type="file"] { padding: 10px; width: 100%; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-add { padding: 12px 25px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; }
+        .btn-add:hover { background-color: #1557b0; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .card a { text-decoration: none; color: #1a73e8; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+        .delete-btn { background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; font-weight: 600; }
+        .delete-btn:hover { background: #fecaca; }
+        .file-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>הספרייה הלימודית שלי</h1>
+    
+    <div class="admin-panel">
+        <div class="input-group">
+            <label>שם הנושא / המקצוע:</label>
+            <input type="text" id="subjectName" placeholder="למשל: סיכום בהיסטוריה">
+        </div>
+
+        <div class="input-group">
+            <label>אפשרות 1: הדבק קישור (URL):</label>
+            <input type="text" id="subjectUrl" placeholder="https://www.google.com...">
+        </div>
+
+        <p>או</p>
+
+        <div class="input-group">
+            <label>אפשרות 2: העלה קובץ מהמחשב (PDF, תמונה):</label>
+            <input type="file" id="fileInput">
+        </div>
+
+        <button class="btn-add" onclick="addMaterial()">עדכן והוסף לספרייה</button>
+    </div>
+
+    <div class="grid" id="materialsGrid"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', displayMaterials);
+
+        function addMaterial() {
+            const name = document.getElementById('subjectName').value;
+            const url = document.getElementById('subjectUrl').value;
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!name) {
+                alert("בבקשה תן שם לנושא");
+                return;
+            }
+
+            // אם המשתמש בחר קובץ
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveToStorage(name, e.target.result); // שומר את תוכן הקובץ כקוד
+                };
+                reader.readAsDataURL(file);
+            } 
+            // אם המשתמש שם קישור
+            else if (url) {
+                saveToStorage(name, url);
+            } else {
+                alert("בבקשה שים קישור או בחר קובץ");
+            }
+        }
+
+        function saveToStorage(name, link) {
+            const material = { name, link, id: Date.now() };
+            let materials = JSON.parse(localStorage.getItem('myMaterials')) || [];
+            materials.push(material);
+            localStorage.setItem('myMaterials', JSON.stringify(materials));
+            
+            // איפוס טפסים
+            document.getElementById('subjectName').value = '';
+            document.getElementById('subjectUrl').value = '';
+            document.getElementById('fileInput').value = '';
+            
+            displayMaterials();
+        }
+
+        function displayMaterials() {
+            const grid = document.getElementById('materialsGrid');
+            const materials = JSON.parse(localStorage.getItem('myMaterials')) || [];
+            grid.innerHTML = '';
+
+            materials.forEach(item => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div class="file-icon">📂</div>
+                        <a href="${item.link}" target="_blank">${item.name}</a>
+                        <button class="delete-btn" onclick="deleteMaterial(${item.id})">מחק חומר</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteMaterial(id) {
+            let materials = JSON.parse(localStorage.getItem('myMaterials'));
+            materials = materials.filter(m => m.id !== id);
+            localStorage.setItem('myMaterials', JSON.stringify(materials));
+            displayMaterials();
+        }
+    </script>
+
+</body>
+</html>
